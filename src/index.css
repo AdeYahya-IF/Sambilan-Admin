@@ -1,0 +1,12 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* Mengubah font utama aplikasi menjadi Plus Jakarta Sans */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  
+  /* Menimpa warna hijau emerald dengan warna brand Sambilan (#005139) */
+  --color-emerald-500: #005139;
+  --color-emerald-600: #00432f; /* Sedikit lebih gelap untuk efek hover tombol */
+  --color-emerald-700: #003625; /* Lebih gelap untuk teks status */
+}
