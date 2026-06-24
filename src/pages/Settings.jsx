@@ -21,21 +21,21 @@ import {
 } from 'lucide-react';
 
 const initialAdmins = [
-  { id: 'ADM-001', name: 'Rian Hidayat', email: 'rian.h@sambilan.com', role: 'Super Admin', status: 'Aktif' },
-  { id: 'ADM-002', name: 'Maya Putri', email: 'maya.p@sambilan.com', role: 'Finance', status: 'Aktif' },
-  { id: 'ADM-003', name: 'Budi Santoso', email: 'budi.s@sambilan.com', role: 'CS', status: 'Aktif' },
-  { id: 'ADM-004', name: 'Sarah Wijaya', email: 'sarah.w@sambilan.com', role: 'Moderator', status: 'Suspended' }
+  { id: 'ADM-001', name: 'Nashiruddin', email: 'nashiruddin@sambilan.com', role: 'Super Admin', status: 'Aktif' },
+  { id: 'ADM-002', name: 'Sari Nur Aini', email: 'sari.n.a@sambilan.com', role: 'Finance', status: 'Aktif' },
+  { id: 'ADM-003', name: 'Naila Rona Nur Aini', email: 'naila.r.n.a@sambilan.com', role: 'CS', status: 'Aktif' },
+  { id: 'ADM-004', name: 'Ade Yahya Hendriawan', email: 'ade.y.h@sambilan.com', role: 'Moderator', status: 'Suspended' }
 ];
 
 const initialAuditLogs = [
-  { id: 'LOG-001', time: '24 Jun 2026, 01:10', admin: 'Rian Hidayat', role: 'Super Admin', activity: 'Mengubah batas waktu auto-release escrow menjadi 24 jam' },
-  { id: 'LOG-002', time: '23 Jun 2026, 18:45', admin: 'Maya Putri', role: 'Finance', activity: 'Mengunduh laporan komisi keuangan bulanan' },
-  { id: 'LOG-003', time: '23 Jun 2026, 14:20', admin: 'Rian Hidayat', role: 'Super Admin', activity: 'Menambahkan akun admin baru: Budi Santoso (CS)' },
-  { id: 'LOG-004', time: '22 Jun 2026, 11:30', admin: 'Sarah Wijaya', role: 'Moderator', activity: 'Mengubah threshold moderasi sensitivitas AI' },
-  { id: 'LOG-005', time: '21 Jun 2026, 09:15', admin: 'Rian Hidayat', role: 'Super Admin', activity: 'Menangguhkan akses akun admin Sarah Wijaya' }
+  { id: 'LOG-001', time: '24 Jun 2026, 01:10', admin: 'Nashiruddin', role: 'Super Admin', activity: 'Mengubah batas waktu auto-release escrow menjadi 24 jam' },
+  { id: 'LOG-002', time: '23 Jun 2026, 18:45', admin: 'Sari Nur Aini', role: 'Finance', activity: 'Mengunduh laporan komisi keuangan bulanan' },
+  { id: 'LOG-003', time: '23 Jun 2026, 14:20', admin: 'Nashiruddin', role: 'Super Admin', activity: 'Menambahkan akun admin baru: Naila Rona Nur Aini (CS)' },
+  { id: 'LOG-004', time: '22 Jun 2026, 11:30', admin: 'Ade Yahya Hendriawan', role: 'Moderator', activity: 'Mengubah threshold moderasi sensitivitas AI' },
+  { id: 'LOG-005', time: '21 Jun 2026, 09:15', admin: 'Nashiruddin', role: 'Super Admin', activity: 'Menangguhkan akses akun admin Ade Yahya Hendriawan' }
 ];
 
-export default function Settings() {
+export default function Settings({ adminRole = 'Super Admin', setAdminRole = () => {} }) {
   const [activeTab, setActiveTab] = useState('Umum'); // 'Umum' | 'Komisi' | 'Kebijakan' | 'Admin' | 'Notifikasi'
   
   // Toast notifications
@@ -50,14 +50,14 @@ export default function Settings() {
 
   // State: Pengaturan Umum
   const [appName, setAppName] = useState('Sambilan Admin');
-  const [appEmail, setAppEmail] = useState('admin-support@sambilan.id');
-  const [appPhone, setAppPhone] = useState('+62 821-2299-8811');
-  const [appAddress, setAppAddress] = useState('Gedung Telkom Landmark Tower Lt. 32, Jl. Jend. Gatot Subroto Kav. 52, Jakarta Selatan, DKI Jakarta 12710');
+  const [appEmail, setAppEmail] = useState('halo@sambilan.id');
+  const [appPhone, setAppPhone] = useState('+62 899-9999-9999');
+  const [appAddress, setAppAddress] = useState('Jl Wirayudha, RT 01 RW 01, Dusun IV, Desa Karangnanas, Kecamatan Sokaraja, Kabupaten Banyumas, Prov. Jawa Tengah, 53181');
   const [themeColor, setThemeColor] = useState('emerald');
 
   // State: Pengaturan Komisi
-  const [commissionPct, setCommissionPct] = useState(10);
-  const [commissionFlat, setCommissionFlat] = useState(5000);
+  const [commissionPct, setCommissionPct] = useState(0);
+  const [commissionFlat, setCommissionFlat] = useState(3500);
   const [wdAdminFee, setWdAdminFee] = useState(2500);
   const [minTopUp, setMinTopUp] = useState(10000);
   const [maxTopUp, setMaxTopUp] = useState(10000000);
@@ -86,6 +86,7 @@ export default function Settings() {
   const [admins, setAdmins] = useState(initialAdmins);
   const [newAdminName, setNewAdminName] = useState('');
   const [newAdminEmail, setNewAdminEmail] = useState('');
+  const [newAdminPassword, setNewAdminPassword] = useState('');
   const [newAdminRole, setNewAdminRole] = useState('Moderator');
   const [showAddAdminModal, setShowAddAdminModal] = useState(false);
   const [auditLogs, setAuditLogs] = useState(initialAuditLogs);
@@ -117,7 +118,7 @@ export default function Settings() {
       const newLog = {
         id: `LOG-${prev.length + 101}`,
         time: formattedDate,
-        admin: 'Rian Hidayat', // Logged in super admin mock
+        admin: 'Nashiruddin', // Logged in super admin mock
         role: 'Super Admin',
         activity: activityText
       };
@@ -147,8 +148,8 @@ export default function Settings() {
   // Add new admin handler
   const handleAddAdmin = (e) => {
     e.preventDefault();
-    if (!newAdminName.trim() || !newAdminEmail.trim()) {
-      triggerToast('Nama dan Email admin harus diisi!');
+    if (!newAdminName.trim() || !newAdminEmail.trim() || !newAdminPassword.trim()) {
+      triggerToast('Nama, Email, dan Password admin harus diisi!', 'error');
       return;
     }
 
@@ -157,6 +158,7 @@ export default function Settings() {
         id: `ADM-${prev.length + 101}`,
         name: newAdminName,
         email: newAdminEmail,
+        password: newAdminPassword,
         role: newAdminRole,
         status: 'Aktif'
       };
@@ -173,6 +175,7 @@ export default function Settings() {
     // Reset form
     setNewAdminName('');
     setNewAdminEmail('');
+    setNewAdminPassword('');
     setNewAdminRole('Moderator');
     setShowAddAdminModal(false);
   };
@@ -209,7 +212,7 @@ export default function Settings() {
       <div className="flex justify-between items-start">
         <div>
           <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">
-            <span>⚙️</span> Pengaturan Platform
+            Pengaturan Platform
           </h2>
           <p className="text-slate-500 text-sm mt-1">Konfigurasi teknis, keuangan, kebijakan operasional, manajemen admin, dan notifikasi platform Sambilan.</p>
         </div>
@@ -609,6 +612,50 @@ export default function Settings() {
           {/* ==================== TAB 4: MANAJEMEN ADMIN & AUDIT ==================== */}
           {activeTab === 'Admin' && (
             <div className="space-y-6 animate-in fade-in duration-300">
+
+              {/* ROLE SIMULATOR */}
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
+                <div className="flex items-center gap-2.5 border-b border-slate-100 pb-4">
+                  <div className="p-2 bg-amber-50 rounded-lg text-amber-600">
+                    <Shield size={18} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-base">Simulasikan Hak Akses Admin (Testing Role)</h3>
+                    <p className="text-xs text-slate-500 mt-0.5">Ubah identitas simulasi akun Anda saat ini untuk menguji pembatasan izin menu & privasi data.</p>
+                  </div>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-4 rounded-xl border border-slate-150">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                    <span className="text-xs font-bold text-slate-700">Role Admin Aktif:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {['Super Admin', 'CS', 'Finance', 'Moderator'].map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => {
+                            setAdminRole(r);
+                            localStorage.setItem('adminRole', r);
+                            if (window.showToast) {
+                              window.showToast(`Role admin disimulasikan sebagai: ${r}`, 'success');
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer border ${
+                            adminRole === r
+                              ? 'bg-[#005139] text-white border-[#005139] shadow-xs'
+                              : 'bg-white text-slate-650 hover:bg-slate-100 border-slate-200 shadow-3xs'
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-semibold italic">
+                    *Mempengaruhi izin navigasi menu samping (Sidebar) & akses data sensitif.
+                  </span>
+                </div>
+              </div>
               
               {/* DAFTAR ADMIN */}
               <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col gap-4">
@@ -984,6 +1031,19 @@ export default function Settings() {
                   placeholder="contoh: nama.admin@sambilan.com"
                   value={newAdminEmail}
                   onChange={(e) => setNewAdminEmail(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-[#005139]"
+                />
+              </div>
+
+              {/* Password */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-slate-700">Password Sementara</label>
+                <input 
+                  type="password" 
+                  required
+                  placeholder="Masukkan password admin..."
+                  value={newAdminPassword}
+                  onChange={(e) => setNewAdminPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:border-[#005139]"
                 />
               </div>

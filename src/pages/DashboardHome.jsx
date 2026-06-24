@@ -127,20 +127,6 @@ const initialActivities = [
     }
   },
   {
-    id: 'ACT-002',
-    type: 'withdrawal',
-    message: 'Penarikan saldo menunggu proses: Rp 750.000 ke Bank BCA',
-    user: 'Rudi Hermawan',
-    time: '15 menit yang lalu',
-    status: 'Menunggu',
-    detail: {
-      accountName: 'Rudi Hermawan',
-      bankName: 'BCA',
-      accountNumber: '8910237461',
-      amount: 'Rp 750.000',
-    }
-  },
-  {
     id: 'ACT-003',
     type: 'dispute',
     message: 'Dispute baru masuk: Pekerjaan Quest #7721 diklaim tidak lengkap',
@@ -210,20 +196,6 @@ const initialActivities = [
       budget: 'Rp 30.000',
       riskLevel: 'Sedang',
     }
-  },
-  {
-    id: 'ACT-008',
-    type: 'withdrawal',
-    message: 'Penarikan saldo menunggu proses: Rp 1.200.000 ke Bank Mandiri',
-    user: 'Siti Aminah',
-    time: '5 jam yang lalu',
-    status: 'Menunggu',
-    detail: {
-      accountName: 'Siti Aminah',
-      bankName: 'Mandiri',
-      accountNumber: '1240008761234',
-      amount: 'Rp 1.200.000',
-    }
   }
 ];
 
@@ -246,9 +218,10 @@ export default function DashboardHome({ setActiveMenu }) {
   };
 
   // Filter logic
-  const filteredActivities = feedFilter === 'semua'
+  const filteredActivities = (feedFilter === 'semua'
     ? activities
-    : activities.filter(act => act.type === feedFilter);
+    : activities.filter(act => act.type === feedFilter)
+  ).filter(act => act.type !== 'withdrawal');
 
   // Handle action buttons inside modal
   const handleResolveActivity = (id, newStatus = 'Tuntas') => {
@@ -562,7 +535,6 @@ export default function DashboardHome({ setActiveMenu }) {
               { id: 'user_register', label: 'Pengguna' },
               { id: 'quest_publish', label: 'Quest Baru' },
               { id: 'dispute', label: 'Dispute' },
-              { id: 'withdrawal', label: 'Penarikan' },
               { id: 'ai_alert', label: 'Alert AI' }
             ].map((btn) => (
               <button

@@ -64,11 +64,11 @@ export default function App() {
       case 'Dashboard': return <DashboardHome setActiveMenu={setActiveMenu} />;
       case 'Manajemen Pengguna': return <Users users={users} setUsers={setUsers} />;
       case 'Manajemen Quest': return <Quests />;
-      case 'Manajemen Keuangan': return <Transactions withdrawals={withdrawals} setWithdrawals={setWithdrawals} />;
+      case 'Manajemen Keuangan': return <Transactions withdrawals={withdrawals} setWithdrawals={setWithdrawals} setActiveMenu={setActiveMenu} />;
       case 'Manajemen AI & Moderasi': return <Moderation />;
       case 'Manajemen Dispute': return <Resolution disputes={disputes} setDisputes={setDisputes} />;
       case 'Manajemen Konten & Komunikasi': return <ContentManagement adminRole={adminRole} setAdminRole={setAdminRole} />;
-      case 'Pengaturan Platform': return <Settings />;
+      case 'Pengaturan Platform': return <Settings adminRole={adminRole} setAdminRole={setAdminRole} />;
       default: return <DashboardHome setActiveMenu={setActiveMenu} />;
     }
   };

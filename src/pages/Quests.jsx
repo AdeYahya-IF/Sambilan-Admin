@@ -255,6 +255,8 @@ export default function Quests() {
   // Rejection confirmation modal state
   const [confirmRejectBlockQuestId, setConfirmRejectBlockQuestId] = useState(null);
   const [confirmRejectBlockCreator, setConfirmRejectBlockCreator] = useState('');
+  const [confirmRejectWarnQuestId, setConfirmRejectWarnQuestId] = useState(null);
+  const [confirmRejectWarnCreator, setConfirmRejectWarnCreator] = useState('');
 
   // Notification overlay
   const [toastMsg, setToastMsg] = useState('');
@@ -404,6 +406,29 @@ export default function Quests() {
       return q;
     }));
     triggerToast(`Quest dibatalkan. Pengguna ${creatorName} telah diblokir.`);
+
+    // Auto shift queue selection
+    const nextFlagged = flaggedQuests.filter(q => q.id !== questId);
+    setSelectedFlaggedQuest(nextFlagged[0] || null);
+  };
+
+  const handleRejectWarn = (questId, creatorName) => {
+    setQuests(prev => prev.map(q => {
+      if (q.id === questId) {
+        return {
+          ...q,
+          status: 'Dibatalkan',
+          aiFlagged: false,
+          aiFlagReason: null,
+          timeline: [
+            ...q.timeline,
+            { time: '24 Jun 2026, 01:12', event: 'Quest ditolak karena melanggar pedoman. Pembuat diberi peringatan.' }
+          ]
+        };
+      }
+      return q;
+    }));
+    triggerToast(`Quest ditolak. Pengguna ${creatorName} diberi peringatan.`);
 
     // Auto shift queue selection
     const nextFlagged = flaggedQuests.filter(q => q.id !== questId);
@@ -832,6 +857,15 @@ export default function Quests() {
                     Tolak & Blokir Pengguna
                   </button>
                   <button 
+                    onClick={() => {
+                      setConfirmRejectWarnQuestId(selectedFlaggedQuest.id);
+                      setConfirmRejectWarnCreator(selectedFlaggedQuest.creator);
+                    }}
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
+                  >
+                    Tolak & Peringatkan
+                  </button>
+                  <button 
                     onClick={() => handleApproveContinue(selectedFlaggedQuest.id)}
                     className="px-4 py-2 bg-[#005139] hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
                   >
@@ -1069,6 +1103,45 @@ export default function Quests() {
                 className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer border-0"
               >
                 Ya, Tolak & Blokir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT & WARN CONFIRMATION MODAL */}
+      {confirmRejectWarnQuestId && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-sm w-full overflow-hidden animate-in zoom-in-95 duration-200 p-6 space-y-4 text-center">
+            <div className="mx-auto w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center">
+              <AlertTriangle size={24} />
+            </div>
+            <h3 className="font-extrabold text-slate-800 text-base">⚠️ Konfirmasi Tolak & Peringatkan</h3>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Apakah Anda yakin ingin menolak quest ini dan memberikan peringatan kepada pembuatnya ({confirmRejectWarnCreator})? Akun pembuat tidak akan diblokir.
+            </p>
+            <div className="flex gap-2.5 pt-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  setConfirmRejectWarnQuestId(null);
+                  setConfirmRejectWarnCreator('');
+                  triggerToast('Aksi dibatalkan', 'error');
+                }}
+                className="flex-1 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-bold transition-colors cursor-pointer border-0 bg-white"
+              >
+                Batalkan
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  handleRejectWarn(confirmRejectWarnQuestId, confirmRejectWarnCreator);
+                  setConfirmRejectWarnQuestId(null);
+                  setConfirmRejectWarnCreator('');
+                }}
+                className="flex-1 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer border-0"
+              >
+                Ya, Tolak & Peringatkan
               </button>
             </div>
           </div>

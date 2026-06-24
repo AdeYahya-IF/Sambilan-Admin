@@ -9,7 +9,8 @@ import {
   Banknote, 
   DollarSign, 
   Clock,
-  XCircle
+  XCircle,
+  AlertCircle
 } from 'lucide-react';
 import { 
   XAxis, 
@@ -34,12 +35,11 @@ const initialTopUps = [
 ];
 
 export const initialWithdrawals = [
-  // Pending queue
-  { id: 'TXN-WD01', user: 'Rudi Hermawan', amount: 750000, targetBank: 'BCA', targetAccount: '8910237461', time: '24 Jun 2026, 00:45', status: 'Menunggu' },
-  { id: 'TXN-WD02', user: 'Siti Aminah', amount: 1200000, targetBank: 'Mandiri', targetAccount: '1240008761234', time: '23 Jun 2026, 20:15', status: 'Menunggu' },
   // Processed history
-  { id: 'TXN-WD03', user: 'Dian Fitriani', amount: 450000, targetBank: 'BRI', targetAccount: '002301098234501', time: '22 Jun 2026, 11:30', status: 'Berhasil' },
-  { id: 'TXN-WD04', user: 'Agus Wijaya', amount: 200000, targetBank: 'BCA', targetAccount: '8910293812', time: '21 Jun 2026, 15:40', status: 'Ditolak', rejectReason: 'Nama pemilik rekening bank tidak sesuai profil pengguna.' }
+  { id: 'TXN-WD01', user: 'Rudi Hermawan', amount: 750000, targetBank: 'BCA', targetAccount: '8910237461', time: '24 Jun 2026, 00:45', status: 'Berhasil', userBalance: 1500000 },
+  { id: 'TXN-WD02', user: 'Siti Aminah', amount: 1200000, targetBank: 'Mandiri', targetAccount: '1240008761234', time: '23 Jun 2026, 20:15', status: 'Ditolak', rejectReason: 'Saldo tidak mencukupi', userBalance: 500000 },
+  { id: 'TXN-WD03', user: 'Dian Fitriani', amount: 450000, targetBank: 'BRI', targetAccount: '002301098234501', time: '22 Jun 2026, 11:30', status: 'Berhasil', userBalance: 1450000 },
+  { id: 'TXN-WD04', user: 'Agus Wijaya', amount: 200000, targetBank: 'BCA', targetAccount: '8910293812', time: '21 Jun 2026, 15:40', status: 'Ditolak', rejectReason: 'Nama pemilik rekening bank tidak sesuai profil pengguna.', userBalance: 0 }
 ];
 
 const initialEscrowList = [
@@ -70,7 +70,7 @@ const categoryRevenueData = [
   { name: 'Lain-lain', value: 1800000, color: '#6366f1' }
 ];
 
-export default function Transactions({ withdrawals: propWithdrawals, setWithdrawals: propSetWithdrawals }) {
+export default function Transactions({ withdrawals: propWithdrawals, setWithdrawals: propSetWithdrawals, setActiveMenu }) {
   const [activeTab, setActiveTab] = useState('ringkasan'); // 'ringkasan' | 'topup' | 'penarikan' | 'escrow'
 
   // State lists
@@ -92,15 +92,37 @@ export default function Transactions({ withdrawals: propWithdrawals, setWithdraw
     return () => clearTimeout(timer);
   }, [activeTab]);
 
+  // Auto-process withdrawals if any are pending ('Menunggu')
+  useEffect(() => {
+    const pendingWDs = withdrawals.filter(w => w.status === 'Menunggu');
+    if (pendingWDs.length > 0) {
+      const timer = setTimeout(() => {
+        setWithdrawals(prev => prev.map(wd => {
+          if (wd.status === 'Menunggu') {
+            const hasSufficientBalance = wd.userBalance === undefined || wd.userBalance >= wd.amount;
+            if (hasSufficientBalance) {
+              return { ...wd, status: 'Berhasil' };
+            } else {
+              return { 
+                ...wd, 
+                status: 'Ditolak', 
+                rejectReason: 'Saldo tidak mencukupi' 
+              };
+            }
+          }
+          return wd;
+        }));
+        triggerToast(`Sistem memproses otomatis ${pendingWDs.length} penarikan.`);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [withdrawals, setWithdrawals]);
+
   // Filters Top Up
   const [searchTopUp, setSearchTopUp] = useState('');
   const [statusTopUpFilter, setStatusTopUpFilter] = useState('Semua');
   const [methodTopUpFilter, setMethodTopUpFilter] = useState('Semua');
 
-  // Rejection state for withdrawal
-  const [rejectingWD, setRejectingWD] = useState(null);
-  const [rejectReason, setRejectReason] = useState('');
-  const [confirmRejectWDId, setConfirmRejectWDId] = useState(null);
 
   // Date range state for Export reports
   const [exportStartDate, setExportStartDate] = useState('2026-06-01');
@@ -156,35 +178,7 @@ export default function Transactions({ withdrawals: propWithdrawals, setWithdraw
   });
 
   // Action Withdrawal Handlers
-  const handleApproveWithdrawal = (wdId) => {
-    setWithdrawals(prev => prev.map(wd => {
-      if (wd.id === wdId) {
-        return { ...wd, status: 'Berhasil' };
-      }
-      return wd;
-    }));
-    triggerToast('Persetujuan penarikan berhasil diproses.');
-  };
 
-  const handleRejectWithdrawal = (wdId) => {
-    if (!rejectReason.trim()) {
-      triggerToast('Mohon masukkan alasan penolakan.');
-      return;
-    }
-    setWithdrawals(prev => prev.map(wd => {
-      if (wd.id === wdId) {
-        return { 
-          ...wd, 
-          status: 'Ditolak',
-          rejectReason: rejectReason
-        };
-      }
-      return wd;
-    }));
-    triggerToast(`Penarikan dana berhasil ditolak: ${rejectReason}`);
-    setRejectReason('');
-    setRejectingWD(null);
-  };
 
   // Action Escrow release
   const handleReleaseEscrow = (questId, target) => {
@@ -628,12 +622,28 @@ export default function Transactions({ withdrawals: propWithdrawals, setWithdraw
       {activeTab === 'penarikan' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           
+          {/* INFO BANNER - AUTO PROCESS ACTIVE */}
+          <div className="bg-emerald-50/50 border border-emerald-100 p-4 rounded-xl flex items-start gap-3">
+            <div className="p-2 bg-emerald-100 text-emerald-800 rounded-lg shrink-0">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div>
+              <h4 className="text-xs font-black text-emerald-950 uppercase tracking-wide">Sistem Penarikan Instan Aktif</h4>
+              <p className="text-[11px] text-emerald-900 mt-0.5 leading-relaxed font-semibold">
+                Permintaan penarikan dana diproses secara otomatis oleh sistem tanpa persetujuan manual admin. Penarikan disetujui instan jika saldo pengguna mencukupi, atau ditolak otomatis jika saldo tidak cukup.
+              </p>
+            </div>
+          </div>
+
           {/* PENDING QUEUE */}
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
               <h3 className="font-bold text-slate-800 text-sm">Antrian Penarikan Menunggu Proses</h3>
-              <span className="px-2 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-black rounded-md border border-rose-100">
-                {withdrawals.filter(w => w.status === 'Menunggu').length} Butuh Mediasi
+              <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black rounded-md border border-emerald-100 flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                {withdrawals.filter(w => w.status === 'Menunggu').length} Diproses Otomatis
               </span>
             </div>
 
@@ -695,57 +705,15 @@ export default function Transactions({ withdrawals: propWithdrawals, setWithdraw
                         </td>
                         <td className="px-6 py-4 font-extrabold text-[#005139] text-xs">Rp {wd.amount.toLocaleString('id-ID')}</td>
                         
-                        {/* Action buttons */}
-                        <td className="px-6 py-4">
-                          {rejectingWD?.id === wd.id ? (
-                            <div className="flex flex-col gap-2 p-2 bg-slate-50 border border-slate-200 rounded-lg max-w-[280px] mx-auto">
-                              <input 
-                                type="text"
-                                placeholder="Masukkan alasan penolakan..."
-                                value={rejectReason}
-                                onChange={(e) => setRejectReason(e.target.value)}
-                                className="w-full px-2 py-1 border border-slate-200 bg-white rounded text-[11px] font-semibold outline-none focus:border-rose-500"
-                              />
-                              <div className="flex gap-1.5 justify-end">
-                                <button 
-                                  onClick={() => {
-                                    if (!rejectReason.trim()) {
-                                      triggerToast('Mohon masukkan alasan penolakan.', 'error');
-                                      return;
-                                    }
-                                    setConfirmRejectWDId(wd.id);
-                                  }}
-                                  className="px-2 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded text-[10px] font-bold cursor-pointer"
-                                >
-                                  Tolak
-                                </button>
-                                <button 
-                                  onClick={() => {
-                                    setRejectingWD(null);
-                                    setRejectReason('');
-                                  }}
-                                  className="px-2 py-1 bg-slate-200 text-slate-700 rounded text-[10px] font-bold cursor-pointer"
-                                >
-                                  Batal
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center gap-2">
-                              <button 
-                                onClick={() => handleApproveWithdrawal(wd.id)}
-                                className="px-3 py-1 bg-[#005139] hover:bg-emerald-800 text-white rounded-lg text-[10px] font-bold transition-all cursor-pointer shadow-3xs"
-                              >
-                                Setujui & Proses
-                              </button>
-                              <button 
-                                onClick={() => setRejectingWD(wd)}
-                                className="px-3 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-[10px] font-bold transition-all border border-rose-100 cursor-pointer"
-                              >
-                                Tolak
-                              </button>
-                            </div>
-                          )}
+                        {/* Action status/indicator */}
+                        <td className="px-6 py-4 text-center">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-[#005139] bg-emerald-50/50 border border-emerald-100 px-2.5 py-1 rounded-lg">
+                            <svg className="animate-spin h-3 w-3 text-emerald-600 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Memverifikasi Saldo...
+                          </span>
                         </td>
                       </tr>
                     ))
@@ -891,20 +859,18 @@ export default function Transactions({ withdrawals: propWithdrawals, setWithdraw
                               </button>
                             )}
                             {e.questStatus === 'Dispute' && (
-                              <div className="flex gap-1">
-                                <button 
-                                  onClick={() => handleReleaseEscrow(e.questId, 'adventurer')}
-                                  className="px-2 py-0.5 bg-[#005139] hover:bg-emerald-800 text-white rounded text-[9px] font-bold cursor-pointer"
-                                >
-                                  Rilis (Adv)
-                                </button>
-                                <button 
-                                  onClick={() => handleReleaseEscrow(e.questId, 'creator')}
-                                  className="px-2 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded text-[9px] font-bold border border-rose-100 cursor-pointer"
-                                >
-                                  Refund (Cre)
-                                </button>
-                              </div>
+                              <button 
+                                onClick={() => {
+                                  if (setActiveMenu) {
+                                    setActiveMenu('Manajemen Dispute');
+                                  } else {
+                                    alert('Silakan tinjau sengketa ini di menu Manajemen Dispute.');
+                                  }
+                                }}
+                                className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded text-[10px] font-bold border border-amber-200 transition-all cursor-pointer flex items-center justify-center gap-1"
+                              >
+                                <AlertCircle size={12} /> Tinjau Sengketa
+                              </button>
                             )}
                           </div>
                         </td>
@@ -1037,41 +1003,7 @@ export default function Transactions({ withdrawals: propWithdrawals, setWithdraw
         </div>
       )}
 
-      {/* REJECT WITHDRAWAL CONFIRMATION DIALOG */}
-      {confirmRejectWDId && (
-        <div className="fixed inset-0 z-[100] bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-200 text-center">
-            <div className="mx-auto w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center">
-              <XCircle size={24} />
-            </div>
-            <h3 className="font-extrabold text-sm text-slate-850">⚠️ Konfirmasi Tolak Penarikan</h3>
-            <p className="text-xs text-slate-650 leading-relaxed">
-              Apakah Anda yakin ingin menolak request penarikan saldo ini? Dana jaminan penarikan akan dikembalikan ke dompet saldo pengguna.
-            </p>
-            
-            <div className="flex justify-end gap-2.5 pt-2 border-t border-slate-100">
-              <button 
-                onClick={() => {
-                  setConfirmRejectWDId(null);
-                  triggerToast('Aksi dibatalkan', 'error');
-                }}
-                className="flex-1 py-2 bg-white hover:bg-slate-50 text-slate-750 border border-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer font-sans"
-              >
-                Batalkan
-              </button>
-              <button 
-                onClick={() => {
-                  handleRejectWithdrawal(confirmRejectWDId);
-                  setConfirmRejectWDId(null);
-                }}
-                className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-all shadow-xs cursor-pointer font-sans border-0"
-              >
-                Ya, Tolak Penarikan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
 
     </div>
   );

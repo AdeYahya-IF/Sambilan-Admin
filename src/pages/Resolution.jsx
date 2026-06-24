@@ -690,12 +690,20 @@ export default function Resolution({ disputes = initialDisputes, setDisputes = (
                           <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
                             <button 
                               onClick={() => handleSelectDispute(disp)}
-                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer ${
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer relative flex items-center justify-center gap-1.5 mx-auto ${
                                 isCurrentSelection 
                                   ? 'bg-[#005139] text-white border-[#005139]' 
-                                  : 'bg-slate-50 hover:bg-[#005139] hover:text-white text-slate-700 border-slate-200'
+                                  : disp.status === 'Menunggu'
+                                    ? 'bg-rose-50 hover:bg-rose-600 text-rose-700 hover:text-white border-rose-200 shadow-sm shadow-rose-100'
+                                    : 'bg-slate-50 hover:bg-[#005139] hover:text-white text-slate-700 border-slate-200'
                               }`}
                             >
+                              {disp.status === 'Menunggu' && !isCurrentSelection && (
+                                <span className="flex h-2 w-2 relative">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                                </span>
+                              )}
                               Tinjau
                             </button>
                           </td>

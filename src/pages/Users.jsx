@@ -29,7 +29,6 @@ export const initialUsers = [
     joinDate: '12 Okt 2023',
     verificationStatus: 'Terverifikasi',
     accountStatus: 'Aktif',
-    dominantRole: 'Creator',
     initial: 'BK',
     bg: 'bg-[#005139]',
     dob: '24 Oktober 1992',
@@ -53,7 +52,6 @@ export const initialUsers = [
     joinDate: '24 Nov 2023',
     verificationStatus: 'Menunggu',
     accountStatus: 'Aktif',
-    dominantRole: 'Adventurer',
     initial: 'SR',
     bg: 'bg-indigo-500',
     dob: '11 Desember 1995',
@@ -74,7 +72,6 @@ export const initialUsers = [
     joinDate: '05 Des 2023',
     verificationStatus: 'Gagal',
     accountStatus: 'Suspended',
-    dominantRole: 'Adventurer',
     initial: 'AW',
     bg: 'bg-red-500',
     dob: '15 Maret 1990',
@@ -95,7 +92,6 @@ export const initialUsers = [
     joinDate: '18 Jan 2024',
     verificationStatus: 'Terverifikasi',
     accountStatus: 'Aktif',
-    dominantRole: 'Creator',
     initial: 'DF',
     bg: 'bg-blue-600',
     dob: '18 Agustus 1998',
@@ -114,9 +110,8 @@ export const initialUsers = [
     email: 'eko.p@email.com',
     phone: '0895-1234-5678',
     joinDate: '01 Feb 2024',
-    verificationStatus: 'Menunggu',
+    verificationStatus: 'Terverifikasi',
     accountStatus: 'Aktif',
-    dominantRole: 'Adventurer',
     initial: 'EP',
     bg: 'bg-amber-500',
     dob: '01 Januari 1996',
@@ -135,7 +130,6 @@ export const initialUsers = [
     joinDate: '12 Feb 2024',
     verificationStatus: 'Belum Verifikasi',
     accountStatus: 'Aktif',
-    dominantRole: 'Creator',
     initial: 'FA',
     bg: 'bg-slate-400',
     dob: '-',
@@ -154,7 +148,6 @@ export const initialUsers = [
     joinDate: '15 Feb 2024',
     verificationStatus: 'Belum Verifikasi',
     accountStatus: 'Banned',
-    dominantRole: 'Adventurer',
     initial: 'GR',
     bg: 'bg-slate-700',
     dob: '-',
@@ -189,7 +182,6 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [verificationFilter, setVerificationFilter] = useState('Semua');
   const [accountStatusFilter, setAccountStatusFilter] = useState('Semua');
-  const [dominantRoleFilter, setDominantRoleFilter] = useState('Semua');
 
   // Detail Modal state
   const [selectedUser, setSelectedUser] = useState(null);
@@ -231,12 +223,9 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
       user.verificationStatus === verificationFilter;
 
     const matchAccount = accountStatusFilter === 'Semua' || 
-      user.accountStatus === accountStatusFilter;
+      (accountStatusFilter === 'Banned' ? user.accountStatus.includes('Ban') : user.accountStatus === accountStatusFilter);
 
-    const matchRole = dominantRoleFilter === 'Semua' || 
-      user.dominantRole === dominantRoleFilter;
-
-    return matchSearch && matchVerification && matchAccount && matchRole;
+    return matchSearch && matchVerification && matchAccount;
   });
 
   // Verification queue list (users waiting KYC, verified, or failed)
@@ -247,16 +236,6 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
 
 
   // Detail Modal Actions
-  const handleManualVerify = (userId) => {
-    setUsers(prev => prev.map(u => {
-      if (u.id === userId) {
-        return { ...u, verificationStatus: 'Terverifikasi' };
-      }
-      return u;
-    }));
-    setSelectedUser(prev => prev ? { ...prev, verificationStatus: 'Terverifikasi' } : null);
-    triggerToast('Pengguna telah diverifikasi manual.');
-  };
 
   const handleSuspendUser = (userId) => {
     setUsers(prev => prev.map(u => {
@@ -280,15 +259,19 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
     triggerToast('Akun pengguna berhasil disuspend sementara.');
   };
 
-  const handleBanUser = (userId) => {
+  const handleBanUser = (userId, type = 'Permanen') => {
+    const isPermanent = type === 'Permanen';
+    const statusText = isPermanent ? 'Banned' : 'Banned Sementara (30 Hari)';
+    const descText = isPermanent ? 'Akun diblokir permanen oleh admin.' : 'Akun diblokir sementara (30 Hari) oleh admin.';
+
     setUsers(prev => prev.map(u => {
       if (u.id === userId) {
         return { 
           ...u, 
-          accountStatus: 'Banned',
+          accountStatus: statusText,
           sanctions: [
             ...u.sanctions,
-            { date: '24 Jun 2026', type: 'Banned', description: 'Akun diblokir permanen oleh admin.' }
+            { date: '24 Jun 2026', type: 'Banned', description: descText }
           ]
         };
       }
@@ -296,10 +279,32 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
     }));
     setSelectedUser(prev => prev ? { 
       ...prev, 
-      accountStatus: 'Banned',
-      sanctions: [...prev.sanctions, { date: '24 Jun 2026', type: 'Banned', description: 'Akun diblokir permanen oleh admin.' }]
+      accountStatus: statusText,
+      sanctions: [...prev.sanctions, { date: '24 Jun 2026', type: 'Banned', description: descText }]
     } : null);
-    triggerToast('Akun pengguna diblokir secara permanen.');
+    triggerToast(isPermanent ? 'Akun pengguna diblokir secara permanen.' : 'Akun pengguna diblokir sementara selama 30 hari.');
+  };
+
+  const handleUnbanUser = (userId) => {
+    setUsers(prev => prev.map(u => {
+      if (u.id === userId) {
+        return { 
+          ...u, 
+          accountStatus: 'Aktif',
+          sanctions: [
+            ...u.sanctions,
+            { date: '24 Jun 2026', type: 'Unbanned', description: 'Pemblokiran akun dibatalkan oleh admin.' }
+          ]
+        };
+      }
+      return u;
+    }));
+    setSelectedUser(prev => prev ? { 
+      ...prev, 
+      accountStatus: 'Aktif',
+      sanctions: [...prev.sanctions, { date: '24 Jun 2026', type: 'Unbanned', description: 'Pemblokiran akun dibatalkan oleh admin.' }]
+    } : null);
+    triggerToast('Akun pengguna berhasil diaktifkan kembali (unban).');
   };
 
   const handleResetPassword = (name) => {
@@ -451,17 +456,6 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
                   <option value="Suspended">Suspended</option>
                   <option value="Banned">Banned</option>
                 </select>
-
-                {/* Filter Peran Dominan */}
-                <select 
-                  value={dominantRoleFilter} 
-                  onChange={(e) => setDominantRoleFilter(e.target.value)} 
-                  className="px-3 py-1.5 border border-slate-250 bg-white rounded-lg text-xs font-bold text-slate-600 outline-none focus:border-[#005139]"
-                >
-                  <option value="Semua">Semua Peran</option>
-                  <option value="Creator">Creator</option>
-                  <option value="Adventurer">Adventurer</option>
-                </select>
               </div>
             </div>
 
@@ -473,7 +467,6 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
                     <th className="px-6 py-4">Nama Pengguna</th>
                     <th className="px-6 py-4">Kontak</th>
                     <th className="px-6 py-4">Tanggal Daftar</th>
-                    <th className="px-6 py-4">Peran</th>
                     <th className="px-6 py-4">Status Verifikasi</th>
                     <th className="px-6 py-4">Status Akun</th>
                     <th className="px-6 py-4 text-center">Aksi</th>
@@ -525,7 +518,6 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
                               setSearchTerm('');
                               setVerificationFilter('Semua');
                               setAccountStatusFilter('Semua');
-                              setDominantRoleFilter('Semua');
                             }}
                             className="px-3.5 py-1.5 bg-[#005139] hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition-all cursor-pointer border-0"
                           >
@@ -558,17 +550,6 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
                         {/* Join Date */}
                         <td className="px-6 py-4 text-xs font-semibold text-slate-600">
                           {user.joinDate}
-                        </td>
-
-                        {/* Dominant Role */}
-                        <td className="px-6 py-4">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            user.dominantRole === 'Creator' 
-                              ? 'bg-purple-50 text-purple-650 border border-purple-100' 
-                              : 'bg-indigo-50 text-indigo-650 border border-indigo-100'
-                          }`}>
-                            {user.dominantRole}
-                          </span>
                         </td>
 
                         {/* KYC Verification Status */}
@@ -860,86 +841,51 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
             {/* Modal Body Scroll Container */}
             <div className="p-6 overflow-y-auto space-y-6 flex-1">
               
-              {/* Profile Card & Documents side-by-side */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Profile Card */}
+              <div className="bg-slate-50 p-6 rounded-xl border border-slate-150">
+                <div className="flex flex-col sm:flex-row items-center gap-6 pb-4 border-b border-slate-200">
+                  <div className={`w-16 h-16 rounded-full text-white font-extrabold text-2xl flex items-center justify-center ${selectedUser.bg}`}>
+                    {selectedUser.initial}
+                  </div>
+                  <div className="text-center sm:text-left flex-1">
+                    <div className="flex flex-col sm:flex-row items-center gap-2 justify-center sm:justify-start">
+                      <h4 className="font-bold text-slate-800 text-lg">{selectedUser.name}</h4>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-black ${
+                        selectedUser.accountStatus === 'Aktif'
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                          : selectedUser.accountStatus === 'Suspended'
+                          ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                          : 'bg-rose-50 text-rose-700 border border-rose-100'
+                      }`}>
+                        {selectedUser.accountStatus}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 font-mono block mt-0.5">ID: {selectedUser.id}</span>
+                  </div>
+                </div>
                 
-                {/* 1. Profile metadata */}
-                <div className="md:col-span-1 bg-slate-50 p-4 rounded-xl border border-slate-150 space-y-4">
-                  <div className="flex flex-col items-center text-center pb-2 border-b border-slate-200">
-                    <div className={`w-14 h-14 rounded-full text-white font-extrabold text-xl flex items-center justify-center ${selectedUser.bg} mb-3`}>
-                      {selectedUser.initial}
-                    </div>
-                    <h4 className="font-bold text-slate-800 text-base">{selectedUser.name}</h4>
-                    <span className="text-[10px] text-slate-400 font-mono mt-0.5">ID: {selectedUser.id}</span>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs pt-4">
+                  <div>
+                    <span className="text-slate-450 block text-[10px] font-bold">EMAIL</span>
+                    <span className="font-bold text-slate-750">{selectedUser.email}</span>
                   </div>
-                  
-                  <div className="space-y-2.5 text-xs">
-                    <div>
-                      <span className="text-slate-450 block text-[10px] font-bold">EMAIL</span>
-                      <span className="font-bold text-slate-750">{selectedUser.email}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-450 block text-[10px] font-bold">NOMOR TELEPON</span>
-                      <span className="font-bold text-slate-750">{selectedUser.phone}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-450 block text-[10px] font-bold">TANGGAL GABUNG</span>
-                      <span className="font-bold text-slate-750">{selectedUser.joinDate}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-450 block text-[10px] font-bold">TANGGAL LAHIR</span>
-                      <span className="font-bold text-slate-750">{selectedUser.dob}</span>
-                    </div>
-                    <div>
-                      <span className="text-slate-450 block text-[10px] font-bold">ALAMAT DOMISILI</span>
-                      <span className="font-medium text-slate-750 leading-relaxed">{selectedUser.address}</span>
-                    </div>
+                  <div>
+                    <span className="text-slate-455 block text-[10px] font-bold">NOMOR TELEPON</span>
+                    <span className="font-bold text-slate-750">{selectedUser.phone}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-455 block text-[10px] font-bold">TANGGAL GABUNG</span>
+                    <span className="font-bold text-slate-750">{selectedUser.joinDate}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-455 block text-[10px] font-bold">TANGGAL LAHIR</span>
+                    <span className="font-bold text-slate-750">{selectedUser.dob}</span>
+                  </div>
+                  <div className="col-span-2 md:col-span-4">
+                    <span className="text-slate-455 block text-[10px] font-bold">ALAMAT DOMISILI</span>
+                    <span className="font-medium text-slate-750 leading-relaxed">{selectedUser.address}</span>
                   </div>
                 </div>
-
-                {/* 2. Documents Preview */}
-                <div className="md:col-span-2 space-y-4">
-                  <h4 className="text-xs font-bold text-slate-400 tracking-wider">PREVIEW DOKUMEN KYC SUBMISSION</h4>
-                  
-                  {selectedUser.verificationStatus === 'Belum Verifikasi' ? (
-                    <div className="p-8 text-center text-slate-400 text-xs border border-dashed border-slate-200 bg-slate-50 rounded-xl flex flex-col items-center justify-center gap-1.5 h-44">
-                      <AlertCircle size={28} className="text-slate-350" />
-                      <span className="font-bold">Dokumen KYC Belum Diunggah</span>
-                      <span>User ini belum melakukan pendaftaran verifikasi dokumen identitas.</span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      
-                      {/* Selfie Mock */}
-                      <div className="border border-slate-200 bg-slate-50 p-3 rounded-xl flex flex-col items-center text-center">
-                        <span className="text-[10px] font-bold text-slate-500 self-start mb-2">Foto Selfie Liveness</span>
-                        <div className="w-28 aspect-[3/4] border border-slate-200 bg-slate-100 rounded-lg flex flex-col items-center justify-center relative overflow-hidden shadow-3xs p-2">
-                          <UsersIcon size={24} className="text-slate-300" />
-                          <span className="text-[8px] text-slate-400 mt-2">Selfie Photo</span>
-                          <span className="absolute bottom-1 right-1 bg-emerald-500 text-white rounded-full p-0.5"><ShieldCheck size={8} /></span>
-                        </div>
-                        <span className="text-[9px] text-slate-400 mt-2">Liveness Score: 98% (Pass)</span>
-                      </div>
-
-                      {/* KTP Document Mock */}
-                      <div className="border border-slate-200 bg-slate-50 p-3 rounded-xl flex flex-col items-center justify-center">
-                        <span className="text-[10px] font-bold text-slate-500 self-start mb-2">Identitas KTP/KTM</span>
-                        <div className="w-full aspect-[8/5] bg-sky-50 border border-sky-100 rounded-lg p-2.5 flex flex-col justify-between text-sky-900 font-mono text-[7px]">
-                          <div className="flex justify-between border-b border-sky-200/50 pb-0.5">
-                            <span className="font-extrabold text-[6px]">KTP-EL JAWA BARAT</span>
-                          </div>
-                          <div className="space-y-0.5 mt-1 flex-1">
-                            <div>Nama: {selectedUser.name}</div>
-                            <div>Lahir: {selectedUser.dob}</div>
-                          </div>
-                          <div className="text-[6px] text-sky-800 border-t border-sky-250/30 pt-0.5">BERLAKU SEUMUR HIDUP</div>
-                        </div>
-                      </div>
-
-                    </div>
-                  )}
-                </div>
-
               </div>
 
               {/* Stats & Finance */}
@@ -1114,14 +1060,7 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
             {/* Modal Actions Footer */}
             <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-2.5 justify-end shrink-0">
               
-              {selectedUser.verificationStatus !== 'Terverifikasi' && (
-                <button 
-                  onClick={() => handleManualVerify(selectedUser.id)}
-                  className="px-3.5 py-2 bg-emerald-50 text-[#005139] border border-emerald-100 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center gap-1 cursor-pointer"
-                >
-                  <UserCheck size={14} /> Verifikasi Manual
-                </button>
-              )}
+
 
               <button 
                 onClick={() => handleResetPassword(selectedUser.name)}
@@ -1130,7 +1069,16 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
                 <Lock size={14} /> Reset Password
               </button>
 
-              {selectedUser.accountStatus !== 'Suspended' && selectedUser.accountStatus !== 'Banned' && (
+              {selectedUser.accountStatus !== 'Aktif' && (
+                <button 
+                  onClick={() => handleUnbanUser(selectedUser.id)}
+                  className="px-3.5 py-2 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-xl text-xs font-bold hover:bg-emerald-100 transition-all flex items-center gap-1 cursor-pointer animate-in fade-in duration-200"
+                >
+                  <UserCheck size={14} /> Aktifkan Kembali Akun (Unban)
+                </button>
+              )}
+
+              {selectedUser.accountStatus === 'Aktif' && (
                 <button 
                   onClick={() => handleSuspendUser(selectedUser.id)}
                   className="px-3.5 py-2 bg-amber-50 text-amber-700 border border-amber-100 rounded-xl text-xs font-bold hover:bg-amber-100 transition-all flex items-center gap-1 cursor-pointer"
@@ -1139,12 +1087,12 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
                 </button>
               )}
 
-              {selectedUser.accountStatus !== 'Banned' && (
+              {!selectedUser.accountStatus.includes('Ban') && !selectedUser.accountStatus.includes('Banned') && (
                 <button 
                   onClick={() => setConfirmBanUserId(selectedUser.id)}
                   className="px-3.5 py-2 bg-rose-600 text-white rounded-xl text-xs font-bold hover:bg-rose-700 transition-all flex items-center gap-1 cursor-pointer"
                 >
-                  <Ban size={14} /> Ban Permanen
+                  <Ban size={14} /> Blokir Akun (Ban)
                 </button>
               )}
 
@@ -1161,30 +1109,40 @@ export default function Users({ users: propUsers, setUsers: propSetUsers }) {
             <div className="mx-auto w-12 h-12 bg-rose-50 text-rose-600 rounded-full flex items-center justify-center">
               <Ban size={24} />
             </div>
-            <h3 className="font-extrabold text-slate-800 text-base">⚠️ Konfirmasi Ban Pengguna</h3>
+            <h3 className="font-extrabold text-slate-800 text-base">⚠️ Konfirmasi Blokir Pengguna</h3>
             <p className="text-xs text-slate-500 leading-relaxed">
-              Apakah Anda yakin ingin memblokir permanen (ban) akun pengguna ini? Tindakan ini akan menghentikan akses mereka secara permanen.
+              Pilih jenis pemblokiran untuk akun pengguna ini. Pemblokiran akan langsung memutus akses mereka ke sistem.
             </p>
-            <div className="flex gap-2.5 pt-2">
+            <div className="flex flex-col gap-2 pt-2">
+              <button 
+                type="button"
+                onClick={() => {
+                  handleBanUser(confirmBanUserId, 'Sementara');
+                  setConfirmBanUserId(null);
+                }}
+                className="w-full py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-100 rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+              >
+                <Clock size={14} /> Ban Sementara (30 Hari)
+              </button>
+              <button 
+                type="button"
+                onClick={() => {
+                  handleBanUser(confirmBanUserId, 'Permanen');
+                  setConfirmBanUserId(null);
+                }}
+                className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center justify-center gap-1.5 border-0"
+              >
+                <Ban size={14} /> Ban Permanen (Selamanya)
+              </button>
               <button 
                 type="button"
                 onClick={() => {
                   setConfirmBanUserId(null);
                   triggerToast('Aksi dibatalkan', 'error');
                 }}
-                className="flex-1 py-2 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-bold transition-colors cursor-pointer border-0 bg-white"
+                className="w-full py-2.5 border border-slate-200 hover:bg-slate-50 text-slate-500 rounded-xl text-xs font-bold transition-colors cursor-pointer border-0 bg-white"
               >
                 Batalkan
-              </button>
-              <button 
-                type="button"
-                onClick={() => {
-                  handleBanUser(confirmBanUserId);
-                  setConfirmBanUserId(null);
-                }}
-                className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer border-0"
-              >
-                Ya, Ban Pengguna
               </button>
             </div>
           </div>

@@ -1022,38 +1022,7 @@ export default function ContentManagement({ adminRole = 'Super Admin', setAdminR
       {activeTab === 'cs' && (
         <div className="space-y-6 animate-in fade-in duration-200">
           
-          {/* ROLE SIMULATOR (UNTUK PENGUJIAN KEPATUHAN PRIVASI) */}
-          <div className="bg-slate-100 border border-slate-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-3xs">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5">
-              <span className="text-xs font-bold text-slate-700">Simulasikan Role Admin:</span>
-              <div className="flex flex-wrap gap-1.5">
-                {['Super Admin', 'CS', 'Finance', 'Moderator'].map((r) => (
-                  <button
-                    key={r}
-                    type="button"
-                    onClick={() => {
-                      setAdminRole(r);
-                      localStorage.setItem('adminRole', r);
-                      if (window.showToast) {
-                        window.showToast(`Role admin disimulasikan sebagai: ${r}`, 'success');
-                      }
-                    }}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                      adminRole === r
-                        ? 'bg-[#005139] text-white shadow-2xs'
-                        : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200 shadow-3xs'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <span className="text-[10px] text-slate-400 font-semibold italic">
-              *Hanya role "CS" & "Super Admin" yang dapat mengakses detail tiket
-            </span>
-          </div>
-          
+
           {/* CS STATISTICS */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
